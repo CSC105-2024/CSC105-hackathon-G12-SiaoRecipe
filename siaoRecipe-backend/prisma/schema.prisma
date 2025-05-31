@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique
+  password  String
+  createdAt DateTime  @default(now())
+  likes     Like[]
+  recipes   Recipe[]
+  comments  Comment[] 
+}
+
+model Recipe {
+  id          Int              @id @default(autoincrement())
+  title       String
+  description String @db.Text
+  authorId    Int
+  createdAt   DateTime         @default(now())
+  likes       Like[]
+  author      User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments    Comment[] 
+  emotions    RecipeEmotion[]  
+  @@index([authorId], map: "Recipe_authorId_fkey")
+}
+
+model RecipeEmotion {
+  id        Int      @id @default(autoincrement())
+  recipeId  Int
+  emotion   Emotion
+
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([recipeId, emotion])
+}
+model Like {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  recipeId  Int
+  createdAt DateTime @default(now())
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recipeId])
+  @@index([recipeId], map: "Like_recipeId_fkey")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  authorId  Int
+  recipeId  Int
+
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
+  @@index([authorId])
+}
+
+enum Emotion {
+  SAD
+  LONELY
+  CONFUSED
+  HAPPY
+  HOPEFUL
+  EMPTY
+  ANGRY
+  CALM
+  GRATEFUL
+  NOSTALGIC
+}
