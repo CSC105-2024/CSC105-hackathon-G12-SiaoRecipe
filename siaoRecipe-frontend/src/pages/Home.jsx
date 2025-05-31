@@ -92,7 +92,7 @@ const ThreadItem = ({ thread }) => {
   );
 };
 
-const Homepage = () => {
+const Home= () => {
   const [threads, setThreads] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -127,26 +127,29 @@ const Homepage = () => {
     setIsModalOpen(false);
   };
 
-  const filteredThreads = threads
-    .filter((thread) => {
-      const lowerSearch = searchTerm.toLowerCase();
-      const username = thread.author?.username?.toLowerCase() || "";
-      const description = thread.description?.toLowerCase() || "";
-      const emotionText = thread.emotions?.map((e) => e.emotion?.toLowerCase()) || [];
+const filteredThreads = threads
+  .filter((thread) => {
+    const lowerSearch = searchTerm.toLowerCase();
+    const username = thread.author?.username?.toLowerCase() || "";
+    const description = thread.description?.toLowerCase() || "";
 
-      const matchesSearch =
-        username.includes(lowerSearch) ||
-        description.includes(lowerSearch) ||
-        emotionText.some((e) => e.includes(lowerSearch));
+    // ✅ แปลง emotion เป็น UPPERCASE
+    const emotionText = thread.emotions?.map((e) => e.emotion?.toUpperCase()) || [];
 
-      const matchesCategory =
-        selectedCategories.length === 0 ||
-        emotionText.some((e) => selectedCategories.includes(e));
+    const matchesSearch =
+      username.includes(lowerSearch) ||
+      description.includes(lowerSearch) ||
+      emotionText.some((e) => e.includes(lowerSearch.toUpperCase()));
 
-      return matchesSearch && matchesCategory;
-    })
-    .sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0))
-    .slice(0, 10);
+    const matchesCategory =
+      selectedCategories.length === 0 ||
+      emotionText.some((e) => selectedCategories.includes(e)); 
+
+    return matchesSearch && matchesCategory;
+  })
+  .sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0))
+  .slice(0, 10);
+
 
   return (
     <div
@@ -172,7 +175,7 @@ const Homepage = () => {
           />
 
           <div className="flex flex-wrap gap-3 border border-gray-300 p-2 rounded bg-white max-w-[400px] overflow-y-auto max-h-24">
-            {EMOTIONS.map((category) => (
+           {EMOTIONS.map((category) => (
               <label
                 key={category}
                 className={`flex items-center gap-1 text-xs cursor-pointer select-none ${
@@ -223,4 +226,4 @@ const Homepage = () => {
   );
 };
 
-export default Homepage;
+export default Home;
