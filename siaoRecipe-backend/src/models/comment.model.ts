@@ -50,10 +50,29 @@ const deleteComment = (id: number, userId: number) => {
     },
   });
 };
+const updateComment = async (
+  id: number,
+  userId: number,
+  content: string
+) => {
+  return prisma.comment.updateMany({
+  where: {
+    id,
+    authorId: userId,
+  },
+  data: {
+    content,
+  },
+});
+
+};
+
+
 
 export {
   createComment,
   getCommentsByRecipe,
   getAllComments,
   deleteComment,
+  updateComment
 };

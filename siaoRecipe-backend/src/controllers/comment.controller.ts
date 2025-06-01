@@ -4,6 +4,7 @@ import {
   getCommentsByRecipe,
   getAllComments,
   deleteComment,
+  updateComment
 } from "../models/comment.model.js";
 
 const createCommentController = async (c: Context) => {
@@ -47,10 +48,26 @@ const deleteCommentController = async (c: Context) => {
   return c.json({ message: "Comment deleted" });
 };
 
+const updateCommentController = async (c: Context) => {
+  const id = Number(c.req.param("id")); 
+  const { content } = await c.req.json(); 
+  const userId = c.get("user").id; 
+
+  const result = await updateComment(id, userId, content);
+
+  if (result.count === 0) {
+    return c.json({ error: "Comment not found or unauthorized" }, 403);
+  }
+
+  return c.json({ success: true, message: "Comment updated" });
+};
+
+
 export {
   createCommentController,
   getCommentsController,
   getAllCommentsController,
   deleteCommentController,
-  getCommentsByRecipeController
+  getCommentsByRecipeController,
+  updateCommentController
 };

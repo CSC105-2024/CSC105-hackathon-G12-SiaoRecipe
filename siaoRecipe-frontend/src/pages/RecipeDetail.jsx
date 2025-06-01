@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { AiOutlineUser, AiFillHeart } from "react-icons/ai";
-import { FaRegCommentDots } from "react-icons/fa";
+import { FaRegCommentDots, FaEdit, FaTrash } from "react-icons/fa";
 import Wallpaper from "../assets/Wallpaper_LowOpacity.jpg";
 import { recipeApi } from "../api/recipeApi";
 import { commentApi } from "../api/commentApi";
 import { likeApi } from "../api/likeApi";
+import { userApi } from "../api/userApi";
+import EditCommentModal from "../components/EditComment.Modal";
+import ConfirmDeleteCommentModal from "../components/ConfirmDeleteCommentModal";
 
 const RecipeDetail = () => {
   const { id } = useParams();
@@ -14,20 +17,27 @@ const RecipeDetail = () => {
   const [newComment, setNewComment] = useState("");
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [editingComment, setEditingComment] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [recipeRes, commentRes, hasLikedRes, likeCountRes] = await Promise.all([
-          recipeApi.getById(id),
-          commentApi.getByRecipe(id),
-          likeApi.hasLiked(id),
-          likeApi.count(id),
-        ]);
+        const [recipeRes, commentRes, hasLikedRes, likeCountRes, userRes] =
+          await Promise.all([
+            recipeApi.getById(id),
+            commentApi.getByRecipe(id),
+            likeApi.hasLiked(id),
+            likeApi.count(id),
+            userApi.getCurrentUser(),
+          ]);
+
         setRecipe(recipeRes.data);
         setComments(commentRes.data);
         setLiked(hasLikedRes.data.liked);
         setLikeCount(likeCountRes.data.count);
+        setCurrentUser(userRes.data);
       } catch (err) {
         console.error("Failed to load data", err);
       }
@@ -57,11 +67,35 @@ const RecipeDetail = () => {
         recipeId: Number(id),
         content: newComment,
       });
-
       setComments((prev) => [res.data, ...prev]);
       setNewComment("");
     } catch (err) {
       console.error("Failed to post comment", err);
+    }
+  };
+
+  const handleSaveEdit = async (commentId, content) => {
+    try {
+      await commentApi.update(commentId, content);
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === commentId ? { ...c, content: content, author: c.author } : c
+        )
+      );
+
+      setEditingComment(null);
+    } catch (err) {
+      console.error("Failed to update comment", err);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await commentApi.delete(confirmDeleteId);
+      setComments((prev) => prev.filter((c) => c.id !== confirmDeleteId));
+      setConfirmDeleteId(null);
+    } catch (err) {
+      console.error("Failed to delete comment", err);
     }
   };
 
@@ -108,7 +142,10 @@ const RecipeDetail = () => {
             className="flex items-center gap-1 cursor-pointer"
             onClick={handleToggleLike}
           >
-            <AiFillHeart size={18} className={liked ? "text-red-500" : "text-gray-400"} />
+            <AiFillHeart
+              size={18}
+              className={liked ? "text-red-500" : "text-gray-400"}
+            />
             <span>{likeCount.toLocaleString()}</span>
           </div>
           <div className="flex items-center gap-1">
@@ -144,17 +181,48 @@ const RecipeDetail = () => {
 
         {/* Comment List */}
         <div className="border-t border-gray-300 pt-4 space-y-3 max-h-[300px] overflow-y-auto">
-          {comments.map((cmt, idx) => (
+          {comments.map((cmt) => (
             <div
-              key={idx}
-              className="bg-gray-100 px-4 py-2 rounded-lg text-sm text-gray-700"
+              key={cmt.id}
+              className="bg-gray-100 px-4 py-2 rounded-lg text-sm text-gray-700 flex justify-between items-start gap-2"
             >
-              <strong>{cmt?.author?.username || "Anonymous"}</strong>:{" "}
-              {cmt?.content}
+              <div>
+                <strong>{cmt?.author?.username || "Anonymous"}</strong>:{" "}
+                {cmt?.content}
+              </div>
+              {currentUser?.id === cmt?.author?.id && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setEditingComment(cmt)}
+                    className="text-black hover:opacity-80"
+                  >
+                    <FaEdit size={18} />
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteId(cmt.id)}
+                    className="text-black hover:opacity-80"
+                  >
+                    <FaTrash size={18} />
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
       </div>
+
+      {/* Modals */}
+      <EditCommentModal
+        isOpen={!!editingComment}
+        comment={editingComment}
+        onClose={() => setEditingComment(null)}
+        onSave={handleSaveEdit}
+      />
+      <ConfirmDeleteCommentModal
+        isOpen={!!confirmDeleteId}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };

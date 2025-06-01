@@ -4,7 +4,8 @@ import {
   getCommentsController,
   getAllCommentsController,
   deleteCommentController,
-  getCommentsByRecipeController
+  getCommentsByRecipeController,
+  updateCommentController
 } from "../controllers/comment.controller.js";
 import { authMiddleware } from "../middleware/auth.js";
 
@@ -15,5 +16,6 @@ commentRoute.get("/:recipeId", getCommentsController);
 commentRoute.get("/recipes/:id/comments", getCommentsByRecipeController);
 commentRoute.post("/", authMiddleware, createCommentController);
 commentRoute.delete("/:id", authMiddleware, deleteCommentController);
+commentRoute.patch("/:id", authMiddleware, updateCommentController);
 
 export { commentRoute };

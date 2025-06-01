@@ -9,4 +9,10 @@ getByRecipe: (recipeId: number) =>
 
   delete: (id: number) =>
     axiosInstance.delete(`/comments/${id}`, { withCredentials: true }),
+    update: (id: number, content: string) =>
+    axiosInstance.patch(
+      `/comments/${id}`,
+      { content },
+      { withCredentials: true }
+    ),
 };
